@@ -1,1 +1,1 @@
-from .docker import install_docker  # noqa
+from .docker import deploy_docker  # noqa

@@ -63,8 +63,8 @@ def _yum_install(state, host):
     )
 
 
-@deploy('Install Docker')
-def install_docker(state, host, config=None):
+@deploy('Deploy Docker')
+def deploy_docker(state, host, config=None):
     '''
     Install Docker on the target machine.
 
