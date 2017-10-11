@@ -6,6 +6,7 @@ import json
 
 from pyinfra.api.deploy import deploy
 from pyinfra.api.exceptions import DeployError
+from pyinfra.api.util import make_hash
 from pyinfra.modules import apt, files, yum
 from six.moves import StringIO
 
@@ -86,11 +87,17 @@ def deploy_docker(state, host, config=None):
             'pyinfra-docker cannot provision this machine!'
         ))
 
+    config_file = config
+
     # If config is a dictionary, turn it into a JSON file for the config
     if isinstance(config, dict):
         config_file = StringIO(json.dumps(config))
 
-    if config_file:
+        # This means the files.put operation always has one name across multiple
+        # hosts.
+        config_file.__name__ = make_hash(config)
+
+    if config:
         files.directory(
             state, host,
             {'Ensure /etc/docker exists'},
