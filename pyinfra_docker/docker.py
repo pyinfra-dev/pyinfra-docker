@@ -6,7 +6,7 @@ import json
 
 from pyinfra.api.deploy import deploy
 from pyinfra.api.exceptions import DeployError
-from pyinfra.api.util import make_hash
+from pyinfra.api.util import get_arg_value, make_hash
 from pyinfra.modules import apt, files, yum
 from six.moves import StringIO
 
@@ -91,10 +91,12 @@ def deploy_docker(state, host, config=None):
 
     # If config is a dictionary, turn it into a JSON file for the config
     if isinstance(config, dict):
-        config_file = StringIO(json.dumps(config))
+        # Convert any jinja2 string variables ({{ host.data...}})
+        config = get_arg_value(state, host, config)
 
-        # This means the files.put operation always has one name across multiple
-        # hosts.
+        # Turn into a file-like object and name such that we only generate one
+        # operation hash between multiple hosts (with the same config).
+        config_file = StringIO(json.dumps(config))
         config_file.__name__ = make_hash(config)
 
     if config:
