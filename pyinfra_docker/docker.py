@@ -73,19 +73,19 @@ def deploy_docker(state, host, config=None):
         config: filename or dict of JSON data
     '''
 
-    # Install Docker w/apt or yum
-    if host.fact.deb_packages:
-        _apt_install(state, host)
-
-    elif host.fact.rpm_packages:
-        _yum_install(state, host)
-
-    # Or fail early!
-    else:
+    # Fail early!
+    if not host.fact.deb_packages and not host.fact.rpm_packages:
         raise DeployError((
             'Neither apt or yum were found, '
             'pyinfra-docker cannot provision this machine!'
         ))
+
+    # Install Docker w/apt or yum
+    with state.when(host.fact.deb_packages):
+        _apt_install(state, host)
+
+    with state.when(host.fact.rpm_packages):
+        _yum_install(state, host)
 
     config_file = config
 
@@ -99,7 +99,7 @@ def deploy_docker(state, host, config=None):
         config_file = StringIO(json.dumps(config))
         config_file.__name__ = make_hash(config)
 
-    if config:
+    with state.when(config):
         files.directory(
             state, host,
             {'Ensure /etc/docker exists'},
