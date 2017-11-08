@@ -91,13 +91,15 @@ def deploy_docker(state, host, config=None):
 
     # If config is a dictionary, turn it into a JSON file for the config
     if isinstance(config, dict):
+        config_hash = make_hash(config)
+
         # Convert any jinja2 string variables ({{ host.data...}})
         config = get_arg_value(state, host, config)
 
         # Turn into a file-like object and name such that we only generate one
         # operation hash between multiple hosts (with the same config).
         config_file = StringIO(json.dumps(config))
-        config_file.__name__ = make_hash(config)
+        config_file.__name__ = config_hash
 
     with state.when(config):
         files.directory(
