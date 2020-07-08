@@ -2,6 +2,9 @@
 *.egg-info
 build/
 dist/
+venv/
+.*swp
+pyinfra-debug.log
 
 .vagrant*
 

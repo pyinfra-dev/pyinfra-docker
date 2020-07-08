@@ -48,14 +48,26 @@ def _apt_install(state, host):
 
 
 def _yum_install(state, host):
-    yum.repo(
-        state, host,
-        {'Add the Docker yum repo'},
-        'docker-ce-stable',
-        'https://download.docker.com/linux/centos/7/$basearch/stable',
-        description='Docker CE Stable - $basearch',
-        gpgkey='https://download.docker.com/linux/centos/gpg',
-    )
+    if host.fact.linux_name == 'CentOS':
+        if host.fact.linux_distribution["major"] == 7:
+            yum.repo(
+                state, host,
+                {'Add the Docker CE Stable yum repo'},
+                'docker-ce-stable',
+                'https://download.docker.com/linux/centos/{{ host.fact.linux_distribution.major }}/$basearch/stable',
+                description='Docker CE Stable - $basearch',
+                gpgkey='https://download.docker.com/linux/centos/gpg',
+            )
+        # Note: Could not get docker-ce working on CentOS 8 at this time. (version conflict with containerd.io)
+        if host.fact.linux_distribution["major"] == 8:
+            yum.repo(
+                state, host,
+                {'Add the Docker CE yum repo'},
+                'docker-ce',
+                'https://download.docker.com/linux/centos/docker-ce.repo',
+                description='Docker CE',
+                gpgkey='https://download.docker.com/linux/centos/gpg',
+            )
 
     yum.packages(
         state, host,
@@ -81,10 +93,10 @@ def deploy_docker(state, host, config=None):
         ))
 
     # Install Docker w/apt or yum
-    with state.when(host.fact.deb_packages):
+    if host.fact.deb_packages:
         _apt_install(state, host)
 
-    with state.when(host.fact.rpm_packages):
+    if host.fact.rpm_packages:
         _yum_install(state, host)
 
     config_file = config
@@ -101,7 +113,7 @@ def deploy_docker(state, host, config=None):
         config_file = StringIO(json.dumps(config))
         config_file.__name__ = config_hash
 
-    with state.when(config):
+    if config:
         files.directory(
             state, host,
             {'Ensure /etc/docker exists'},
