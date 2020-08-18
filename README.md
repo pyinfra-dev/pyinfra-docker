@@ -1,6 +1,6 @@
 # pyinfra Docker
 
-A basic [pyinfra](https://github.com/Fizzadar/pyinfra) deploy that installs and optionally configures Docker on the target hosts. Officially tested & supported Linux distributions:
+A basic [pyinfra](https://pyinfra.com) deploy that installs and optionally configures Docker on the target hosts. Officially tested & supported Linux distributions:
 
 + Ubuntu 16/18/20
 + Debian 8/9/10
@@ -8,7 +8,7 @@ A basic [pyinfra](https://github.com/Fizzadar/pyinfra) deploy that installs and 
 
 ## Usage
 
-See [the example](./example) for a more complete example.
+See [the example](https://github.com/Fizzadar/pyinfra-docker/tree/master/example) for a more complete example.
 
 ```py
 from pyinfra_docker import deploy_docker
