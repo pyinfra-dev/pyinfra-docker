@@ -12,6 +12,7 @@ if __name__ == '__main__':
         description='Install & configure Docker with `pyinfra`.',
         long_description=readme,
         long_description_content_type='text/markdown',
+        url='https://github.com/Fizzadar/pyinfra-docker',
         author='Nick / Fizzadar',
         author_email='pointlessrambler@gmail.com',
         license='MIT',
