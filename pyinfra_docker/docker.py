@@ -1,7 +1,3 @@
-# pyinfra-docker
-# File: pyinfra_docker/docker.py
-# Desc: install Docker with pyinfra using apt or yum
-
 import json
 
 from pyinfra.api.deploy import deploy
@@ -13,71 +9,69 @@ from six.moves import StringIO
 
 def _apt_install(state, host):
     apt.packages(
-        state, host,
-        {'Install apt requirements to use HTTPS'},
-        ['apt-transport-https', 'ca-certificates'],
+        name='Install apt requirements to use HTTPS',
+        packages=['apt-transport-https', 'ca-certificates'],
+        update=True,
+        cache_time=3600,
+        state=state,
+        host=host,
     )
 
+    lsb_release = host.fact.lsb_release
+    lsb_id = lsb_release['id'].lower()
+
     apt.key(
-        state, host,
-        {'Download the Docker apt key'},
-        (
-            'https://download.docker.com/linux/'
-            '{{ host.fact.lsb_release.id|lower }}/gpg'
-        ),
+        name='Download the Docker apt key',
+        src='https://download.docker.com/linux/{0}/gpg'.format(lsb_id),
+        state=state,
+        host=host,
     )
 
     add_apt_repo = apt.repo(
-        state, host,
-        {'Add the Docker apt repo'},
-        (
-            'deb [arch=amd64] https://download.docker.com/linux/'
-            '{{ host.fact.lsb_release.id|lower }} '
-            '{{ host.fact.lsb_release.codename }} stable'
-        ),
+        name='Add the Docker apt repo',
+        src=(
+            'deb [arch=amd64] https://download.docker.com/linux/{0} {1} stable'
+        ).format(lsb_id, lsb_release['codename']),
         filename='docker-ce-stable',
+        state=state,
+        host=host,
     )
 
     apt.packages(
-        state, host,
-        {'Install Docker via apt'},
-        'docker-ce',
-        # Update apt if we added the repo
-        update=add_apt_repo.changed,
+        name='Install Docker via apt',
+        packages='docker-ce',
+        update=add_apt_repo.changed,  # update if we added the repo
+        state=state,
+        host=host,
     )
 
 
 def _yum_install(state, host):
-    if host.fact.linux_name == 'CentOS':
-        if host.fact.linux_distribution["major"] == 7:
-            yum.repo(
-                state, host,
-                {'Add the Docker CE Stable yum repo'},
-                'docker-ce-stable',
-                'https://download.docker.com/linux/centos/{{ host.fact.linux_distribution.major }}/$basearch/stable',
-                description='Docker CE Stable - $basearch',
-                gpgkey='https://download.docker.com/linux/centos/gpg',
-            )
-        # Note: Could not get docker-ce working on CentOS 8 at this time. (version conflict with containerd.io)
-        if host.fact.linux_distribution["major"] == 8:
-            yum.repo(
-                state, host,
-                {'Add the Docker CE yum repo'},
-                'docker-ce',
-                'https://download.docker.com/linux/centos/docker-ce.repo',
-                description='Docker CE',
-                gpgkey='https://download.docker.com/linux/centos/gpg',
-            )
+    yum.repo(
+        name='Add the Docker yum repo',
+        src='https://download.docker.com/linux/centos/docker-ce.repo',
+        state=state,
+        host=host,
+    )
+
+    # Installing Docker on CentOS 8 is currently broken and requires this hack
+    # See: https://github.com/docker/for-linux/issues/873
+    extra_install_args = ''
+    linux_distro = host.fact.linux_distribution
+    if linux_distro['name'] == 'CentOS' and linux_distro['major'] == 8:
+        extra_install_args = '--nobest'
 
     yum.packages(
-        state, host,
-        {'Install Docker via yum'},
-        'docker-ce',
+        name='Install Docker via yum',
+        packages=['docker-ce'],
+        extra_install_args=extra_install_args,
+        state=state,
+        host=host,
     )
 
 
 @deploy('Deploy Docker')
-def deploy_docker(state, host, config=None):
+def deploy_docker(state=None, host=None, config=None):
     '''
     Install Docker on the target machine.
 
@@ -85,7 +79,6 @@ def deploy_docker(state, host, config=None):
         config: filename or dict of JSON data
     '''
 
-    # Fail early!
     if not host.fact.deb_packages and not host.fact.rpm_packages:
         raise DeployError((
             'Neither apt or yum were found, '
@@ -115,14 +108,16 @@ def deploy_docker(state, host, config=None):
 
     if config:
         files.directory(
-            state, host,
-            {'Ensure /etc/docker exists'},
-            '/etc/docker',
+            name='Ensure /etc/docker exists',
+            path='/etc/docker',
+            state=state,
+            host=host,
         )
 
         files.put(
-            state, host,
-            {'Upload the Docker daemon.json'},
-            config_file,
-            '/etc/docker/daemon.json',
+            name='Upload the Docker daemon.json',
+            src=config_file,
+            dest='/etc/docker/daemon.json',
+            state=state,
+            host=host,
         )
