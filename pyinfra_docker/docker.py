@@ -7,7 +7,7 @@ import json
 from pyinfra.api.deploy import deploy
 from pyinfra.api.exceptions import DeployError
 from pyinfra.api.util import get_arg_value, make_hash
-from pyinfra.modules import apt, files, yum
+from pyinfra.operations import apt, files, yum
 from six.moves import StringIO
 
 

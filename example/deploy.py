@@ -1,4 +1,4 @@
-from pyinfra.modules import init
+from pyinfra.operations import init
 from pyinfra_docker import deploy_docker
 
 
