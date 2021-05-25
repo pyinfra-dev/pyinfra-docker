@@ -1,4 +1,4 @@
-from pyinfra.operations import init
+from pyinfra.operations import server
 from pyinfra_docker import deploy_docker
 
 
@@ -11,7 +11,7 @@ deploy_docker(config={
 })
 
 
-init.service(
+server.service(
     'docker',
     running=True,
 )
