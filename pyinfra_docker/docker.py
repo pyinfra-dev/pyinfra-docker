@@ -7,7 +7,7 @@ from pyinfra.api.exceptions import DeployError
 from pyinfra.api.util import make_hash
 from pyinfra.facts.deb import DebPackages
 from pyinfra.facts.rpm import RpmPackages
-from pyinfra.facts.server import LsbRelease
+from pyinfra.facts.server import Command, LsbRelease
 from pyinfra.operations import apt, files, yum
 
 
@@ -27,11 +27,14 @@ def _apt_install():
         src="https://download.docker.com/linux/{0}/gpg".format(lsb_id),
     )
 
+    dpkg_arch = host.get_fact(Command, command="dpkg ----print-architecture")
+
     add_apt_repo = apt.repo(
         name="Add the Docker apt repo",
         src=(
-            "deb [arch=amd64] https://download.docker.com/linux/{0} {1} stable"
-        ).format(lsb_id, lsb_release["codename"]),
+            f"deb [arch={dpkg_arch}] https://download.docker.com/linux/{lsb_id}"
+            f" {lsb_release['codename']} stable"
+        ),
         filename="docker-ce-stable",
     )
 
