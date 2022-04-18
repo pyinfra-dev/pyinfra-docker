@@ -18,5 +18,19 @@ if __name__ == "__main__":
         license="MIT",
         packages=find_packages(),
         install_requires=("pyinfra>=2,<3",),
+        extras_require={
+            "test": [
+                "pytest",
+                "pytest-testinfra",
+            ],
+            "lint": [
+                "black",
+                "isort",
+                "flake8",
+                "flake8-black",
+                "flake8-isort",
+                "flake8-commas",
+            ],
+        },
         include_package_data=True,
     )
