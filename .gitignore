@@ -8,3 +8,4 @@ pyinfra-debug.log
 
 .vagrant*
 
+example/ssh_config
