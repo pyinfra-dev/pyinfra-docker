@@ -7,8 +7,8 @@ from pyinfra.api.exceptions import DeployError
 from pyinfra.api.util import make_hash
 from pyinfra.facts.deb import DebPackages
 from pyinfra.facts.rpm import RpmPackages
-from pyinfra.facts.server import Command, LsbRelease
-from pyinfra.operations import apt, files, yum
+from pyinfra.facts.server import Command, LinuxDistribution, LsbRelease, Which
+from pyinfra.operations import apt, dnf, files, yum
 
 
 def _apt_install():
@@ -27,7 +27,7 @@ def _apt_install():
         src="https://download.docker.com/linux/{0}/gpg".format(lsb_id),
     )
 
-    dpkg_arch = host.get_fact(Command, command="dpkg ----print-architecture")
+    dpkg_arch = host.get_fact(Command, command="dpkg --print-architecture")
 
     add_apt_repo = apt.repo(
         name="Add the Docker apt repo",
@@ -45,8 +45,8 @@ def _apt_install():
     )
 
 
-def _yum_install():
-    yum.repo(
+def _yum_or_dnf_install(yum_or_dnf):
+    yum_or_dnf.repo(
         name="Add the Docker yum repo",
         src="https://download.docker.com/linux/centos/docker-ce.repo",
     )
@@ -54,11 +54,11 @@ def _yum_install():
     # Installing Docker on CentOS 8 is currently broken and requires this hack
     # See: https://github.com/docker/for-linux/issues/873
     extra_install_args = ""
-    linux_distro = host.fact.linux_distribution
+    linux_distro = host.get_fact(LinuxDistribution)
     if linux_distro["name"] == "CentOS" and linux_distro["major"] == 8:
         extra_install_args = "--nobest"
 
-    yum.packages(
+    yum_or_dnf.packages(
         name="Install Docker via yum",
         packages=["docker-ce"],
         extra_install_args=extra_install_args,
@@ -74,20 +74,19 @@ def deploy_docker(config=None):
         config: filename or dict of JSON data
     """
 
-    if not host.get_fact(DebPackages) and not host.get_fact(RpmPackages):
+    if host.get_fact(DebPackages):
+        _apt_install()
+    elif host.get_fact(RpmPackages):
+        _yum_or_dnf_install(
+            dnf if host.get_fact(Which, command="dnf") else yum,
+        )
+    else:
         raise DeployError(
             (
                 "Neither apt or yum were found, "
                 "pyinfra-docker cannot provision this machine!"
             ),
         )
-
-    # Install Docker w/apt or yum
-    if host.get_fact(DebPackages):
-        _apt_install()
-
-    if host.get_fact(RpmPackages):
-        _yum_install()
 
     config_file = config
 
@@ -97,15 +96,10 @@ def deploy_docker(config=None):
 
         # Turn into a file-like object and name such that we only generate one
         # operation hash between multiple hosts (with the same config).
-        config_file = StringIO(json.dumps(config))
+        config_file = StringIO(json.dumps(config, indent=4))
         config_file.__name__ = config_hash
 
     if config:
-        files.directory(
-            name="Ensure /etc/docker exists",
-            path="/etc/docker",
-        )
-
         files.put(
             name="Upload the Docker daemon.json",
             src=config_file,
