@@ -11,7 +11,23 @@ from pyinfra.facts.server import Command, LinuxDistribution, LsbRelease, Which
 from pyinfra.operations import apt, dnf, files, yum
 
 
-def _apt_install():
+def get_pkgs_to_install(version):
+    docker_packages = [
+        "docker-ce",
+        "docker-ce-cli"
+    ]
+    if not version:
+        return docker_packages
+
+    versioned_packages = []
+    for pkg in docker_packages:
+        versioned_packages.append(f"{pkg}={version}")
+
+    return versioned_packages
+
+
+
+def _apt_install(packages):
     apt.packages(
         name="Install apt requirements to use HTTPS",
         packages=["apt-transport-https", "ca-certificates"],
@@ -40,12 +56,13 @@ def _apt_install():
 
     apt.packages(
         name="Install Docker via apt",
-        packages="docker-ce",
+        packages=packages,
         update=add_apt_repo.changed,  # update if we added the repo
+        allow_downgrades=True,
     )
 
 
-def _yum_or_dnf_install(yum_or_dnf):
+def _yum_or_dnf_install(yum_or_dnf, packages):
     yum_or_dnf.repo(
         name="Add the Docker yum repo",
         src="https://download.docker.com/linux/centos/docker-ce.repo",
@@ -60,13 +77,13 @@ def _yum_or_dnf_install(yum_or_dnf):
 
     yum_or_dnf.packages(
         name="Install Docker via yum",
-        packages=["docker-ce"],
+        packages=packages,
         extra_install_args=extra_install_args,
     )
 
 
 @deploy("Deploy Docker")
-def deploy_docker(config=None):
+def deploy_docker(config=None, version=None):
     """
     Install Docker on the target machine.
 
@@ -74,11 +91,13 @@ def deploy_docker(config=None):
         config: filename or dict of JSON data
     """
 
+    packages = get_pkgs_to_install(version)
     if host.get_fact(DebPackages):
-        _apt_install()
+        _apt_install(packages)
     elif host.get_fact(RpmPackages):
         _yum_or_dnf_install(
             dnf if host.get_fact(Which, command="dnf") else yum,
+            packages,
         )
     else:
         raise DeployError(
