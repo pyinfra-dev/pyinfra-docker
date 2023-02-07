@@ -11,19 +11,21 @@ from pyinfra.facts.server import Command, LinuxDistribution, LsbRelease, Which
 from pyinfra.operations import apt, dnf, files, yum
 
 
-def get_pkgs_to_install(version):
+DEFAULTS = {
+    "docker_version": None,
+}
+
+
+def get_pkgs_to_install():
     docker_packages = [
         "docker-ce",
-        "docker-ce-cli"
+        "docker-ce-cli",
+        "docker-ce-rootless-extras",
     ]
-    if not version:
+    if not host.data.docker_version:
         return docker_packages
 
-    versioned_packages = []
-    for pkg in docker_packages:
-        versioned_packages.append(f"{pkg}={version}")
-
-    return versioned_packages
+    return [f"{pkg}={host.data.docker_version}" for pkg in docker_packages]
 
 
 
@@ -82,8 +84,8 @@ def _yum_or_dnf_install(yum_or_dnf, packages):
     )
 
 
-@deploy("Deploy Docker")
-def deploy_docker(config=None, version=None):
+@deploy("Deploy Docker", data_defaults=DEFAULTS)
+def deploy_docker(config=None):
     """
     Install Docker on the target machine.
 
@@ -91,7 +93,7 @@ def deploy_docker(config=None, version=None):
         config: filename or dict of JSON data
     """
 
-    packages = get_pkgs_to_install(version)
+    packages = get_pkgs_to_install()
     if host.get_fact(DebPackages):
         _apt_install(packages)
     elif host.get_fact(RpmPackages):
