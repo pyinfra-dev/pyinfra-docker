@@ -6,7 +6,7 @@ A basic [pyinfra](https://pyinfra.com) deploy that installs and optionally confi
 + Debian 8/9/10
 + CentOS 7/8
 
-This deploy installs packages in the `docker-ce` ecosystem (`docker-ce`/`docker-ce-cli`/`docker-ce-rootless-extras`) You can specify `docker_version` in your inventory data file and it will install that version for all `docker-ce` packages.
+This deploy installs packages in the `docker-ce` ecosystem (`docker-ce`/`docker-ce-cli`/`docker-ce-rootless-extras`) You can specify `docker_version` in the host data and it will install that version for all `docker-ce` packages.
 
 ## Usage
 
