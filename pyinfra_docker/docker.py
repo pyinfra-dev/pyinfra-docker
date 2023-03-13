@@ -16,7 +16,7 @@ DEFAULTS = {
 }
 
 
-def get_pkgs_to_install():
+def get_pkgs_to_install(operator):
     docker_packages = [
         "docker-ce",
         "docker-ce-cli",
@@ -25,7 +25,7 @@ def get_pkgs_to_install():
     if not host.data.docker_version:
         return docker_packages
 
-    return [f"{pkg}={host.data.docker_version}" for pkg in docker_packages]
+    return [f"{pkg}{operator}{host.data.docker_version}" for pkg in docker_packages]
 
 
 
@@ -93,10 +93,11 @@ def deploy_docker(config=None):
         config: filename or dict of JSON data
     """
 
-    packages = get_pkgs_to_install()
     if host.get_fact(DebPackages):
+        packages = get_pkgs_to_install('=')
         _apt_install(packages)
     elif host.get_fact(RpmPackages):
+        packages = get_pkgs_to_install('-')
         _yum_or_dnf_install(
             dnf if host.get_fact(Which, command="dnf") else yum,
             packages,
