@@ -1,0 +1,10 @@
+{
+    "data": {
+        "centos7": {
+            "docker_version": "23.0.0*"
+        },
+        "almalinux8": {
+            "docker_version": "23.0.0*"
+        }
+    }
+}
