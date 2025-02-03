@@ -2,31 +2,27 @@ Vagrant.configure('2') do |config|
     # Disable /vagrant synced folder
     config.vm.synced_folder '.', '/vagrant', disabled: true
 
-    config.vm.define :ubuntu16 do |ubuntu|
-        ubuntu.vm.box = 'bento/ubuntu-16.04'
-    end
-
-    config.vm.define :ubuntu18 do |ubuntu|
-        ubuntu.vm.box = 'bento/ubuntu-18.04'
-    end
-
     config.vm.define :ubuntu20 do |ubuntu|
         ubuntu.vm.box = 'bento/ubuntu-20.04'
     end
 
-    config.vm.define :debian9 do |debian|
-        debian.vm.box = 'bento/debian-9.11'
+    config.vm.define :ubuntu22 do |ubuntu|
+        ubuntu.vm.box = 'bento/ubuntu-22.04'
     end
 
-    config.vm.define :debian10 do |debian|
-        debian.vm.box = 'bento/debian-10'
+    config.vm.define :ubuntu24 do |ubuntu|
+        ubuntu.vm.box = 'bento/ubuntu-24.04'
     end
 
-    config.vm.define :centos7 do |centos|
-        centos.vm.box = 'bento/centos-7'
+    config.vm.define :debian11 do |debian|
+        debian.vm.box = 'bento/debian-11'
     end
 
-    config.vm.define :almalinux8 do |almalinux|
-        almalinux.vm.box = 'bento/almalinux-8'
+    config.vm.define :debian12 do |debian|
+        debian.vm.box = 'bento/debian-12'
+    end
+
+    config.vm.define :almalinux9 do |almalinux|
+        almalinux.vm.box = 'bento/almalinux-9'
     end
 end

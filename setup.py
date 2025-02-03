@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 if __name__ == "__main__":
     setup(
-        version="2.1",
+        version="2.2",
         name="pyinfra-docker",
         description="Install & configure Docker with `pyinfra`.",
         long_description=readme,
