@@ -1,11 +1,11 @@
 import json
 from io import StringIO
 
-from pyinfra.context import host
 from pyinfra.api.deploy import deploy
 from pyinfra.api.exceptions import DeployError
 from pyinfra.api.util import make_hash
-from pyinfra.facts.server import Command, LinuxName, LsbRelease, Which
+from pyinfra.context import host
+from pyinfra.facts.server import Command, LinuxName, OsRelease, Which
 from pyinfra.operations import apt, dnf, files, gpg
 
 DEFAULTS = {
@@ -34,8 +34,8 @@ def _apt_install(packages):
         cache_time=3600,
     )
 
-    lsb_release = host.get_fact(LsbRelease)
-    lsb_id = lsb_release["id"].lower()
+    os_release = host.get_fact(OsRelease)
+    lsb_id = os_release["id"].lower()
 
     keyringPath = "/etc/apt/keyrings"
     gpgKeyPath = f"{keyringPath}/docker.asc"
@@ -48,10 +48,18 @@ def _apt_install(packages):
         force=True,
     )
 
-    gpg.key(
-        name="Download GPG Key",
+    key = gpg.key(
+        name=f"Download GPG Key for distribution {lsb_id}",
         src=f"https://download.docker.com/linux/{lsb_id}/gpg",
         dest=gpgKeyPath,
+    )
+
+    lsb_id = os_release["id_like"].split()[0].lower()
+    gpg.key(
+        name=f"Download GPG Key for distribution {lsb_id}",
+        src=f"https://download.docker.com/linux/{lsb_id}/gpg",
+        dest=gpgKeyPath,
+        _if=key.did_error,
     )
 
     dpkg_arch = host.get_fact(Command, command="dpkg --print-architecture")
@@ -60,7 +68,7 @@ def _apt_install(packages):
         name="Add the Docker APT repo",
         src=(
             f"deb [arch={dpkg_arch} signed-by={gpgKeyPath}] https://download.docker.com/linux/{lsb_id}"
-            f" {lsb_release['codename']} stable"
+            f" {os_release['version_codename']} stable"
         ),
         filename="docker",
     )
