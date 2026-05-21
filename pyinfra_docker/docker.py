@@ -6,8 +6,7 @@ from pyinfra.api.deploy import deploy
 from pyinfra.api.exceptions import DeployError
 from pyinfra.api.util import make_hash
 from pyinfra.facts.server import Command, LinuxName, LsbRelease, Which
-from pyinfra.operations import apt, dnf, files
-
+from pyinfra.operations import apt, dnf, files, gpg
 
 DEFAULTS = {
     "docker_version": None,
@@ -49,7 +48,7 @@ def _apt_install(packages):
         force=True,
     )
 
-    files.download(
+    gpg.key(
         name="Download GPG Key",
         src=f"https://download.docker.com/linux/{lsb_id}/gpg",
         dest=gpgKeyPath,
