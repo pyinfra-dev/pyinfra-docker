@@ -54,7 +54,8 @@ def _apt_install(packages):
         dest=gpgKeyPath,
     )
 
-    lsb_id = os_release["id_like"].split()[0].lower()
+    lsb_id = os_release.get("id_like", os_release.get("id")).split()[0].lower()
+    
     gpg.key(
         name=f"Download GPG Key for distribution {lsb_id}",
         src=f"https://download.docker.com/linux/{lsb_id}/gpg",
